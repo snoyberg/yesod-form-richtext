@@ -27,37 +27,17 @@ import           Text.HTML.SanitizeXSS           (sanitizeBalance)
 import           Text.Julius                     (julius, rawJS)
 import           Yesod.Core
 import           Yesod.Form
+import           Yesod.Form.Jquery
 
-class Yesod a => YesodSummernote a where
-    -- | Bootstrap 3 CSS location.
-    urlBootstrapCss :: a -> Either (Route a) Text
-    urlBootstrapCss _ =
-        Right "https://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.css"
-    -- | Bootstrap 3 library location.
-    urlBootstrapScript :: a -> Either (Route a) Text
-    urlBootstrapScript _ =
-        Right "https://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.js"
-    -- | JQuery library location.
-    urlJQueryScript :: a -> Either (Route a) Text
-    urlJQueryScript _ =
-        Right "https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.js"
+class YesodJquery a => YesodSummernote a where
     -- | Summernote Editor CSS location.
     urlSummernoteCss :: a -> Either (Route a) Text
     urlSummernoteCss _ = Right
-        "https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.0/summernote.css"
+        "https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote-lite.css"
     -- | Summernote Editor library location.
     urlSummernoteScript :: a -> Either (Route a) Text
     urlSummernoteScript _ = Right
-        "https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.0/summernote.js"
-    -- | Should required libraries and scripts be added in DOM tree?  This
-    -- property required to control script loading.  In case if you load JQuery,
-    -- Bootstrap, and Summernote libraries and CSS in @<head>@ it is not
-    -- necessary to load them second time, moreover this could bring some
-    -- issues, for example if JQuery is loaded second time it could brake AJAX
-    -- configuration from 'defaultCsrfMiddleware'.  Setting this to @True@ could
-    -- be useful in case you need single instance of editor on some pages only.
-    summernoteLoadLibrariesAndCss :: a -> Bool
-    summernoteLoadLibrariesAndCss _ = False
+        "https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote-lite.js"
 
 -- | Customizable Summernote editor field.
 --
@@ -80,12 +60,9 @@ $newline never
 <textarea id="#{theId}" *{attrs} name="#{name}" .html>#{showVal val}
 |]
         master <- getYesod
-        (when (summernoteLoadLibrariesAndCss master) $ do
-            addScript'     urlJQueryScript
-            addStylesheet' urlBootstrapCss
-            addScript'     urlBootstrapScript
-            addStylesheet' urlSummernoteCss
-            addScript'     urlSummernoteScript)
+        addScript'     urlJqueryJs
+        addStylesheet' urlSummernoteCss
+        addScript'     urlSummernoteScript
         toWidget $ [julius|
 $(document).ready(function(){
   var input = document.getElementById("#{rawJS theId}");
@@ -100,7 +77,7 @@ $(document).ready(function(){
 
 -- | Summernote editor field with default settings.
 snHtmlField :: YesodSummernote site
-            => Field (HandlerT site m) Html
+            => Field (HandlerFor site) Html
 snHtmlField = snHtmlFieldCustomized ""
 
 
